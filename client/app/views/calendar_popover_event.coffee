@@ -131,9 +131,10 @@ module.exports = class EventPopOver extends PopoverView
             allDay:      @model.isAllDay()
             sameDay:     @model.isSameDay()
             start:       @model.getStartDateObject()
+            links:       @model.getLinks()
+            files:       @model.getFiles()
             end:         @model.getEndDateObject()
                                .add((if @model.isAllDay() then -1 else 0), 'd')
-
 
     # Loop over controls elements w/o exiting the popover scope
     onTab: (ev) =>

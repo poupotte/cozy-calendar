@@ -11,10 +11,50 @@ module.exports = class Event extends ScheduleItem
         details: ''
         description: ''
         place: ''
+        links: ['']
         tags: ['my calendar']
 
     getDiff: ->
         return @getEndDateObject().diff @getStartDateObject(), 'days'
+
+    extractLinks: (details) ->
+        links = []
+        linksWithName = details.match(/\[[a-zA-Z0-9\-\.\ ]+\]\ (http|https|ftp|ftps)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,3}(\/\S*)?/g)
+        linksWithName = [] if not linksWithName?
+        for link in linksWithName
+            # Avoid duplicates
+            details = details.replace link, ''
+        linksWithoutName = details.match(/(?!\]\ )(http|https|ftp|ftps)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,3}(\/\S*)?/g)
+        linksWithoutName = [] if not linksWithoutName?
+        for link in linksWithName
+            index = link.indexOf(']')
+            links.push({"url":link.substring(index+2,link.length), "text": link.substring(1,index)})
+        for link in linksWithoutName
+            links.push({"url":link, "text": link})
+        return links
+
+    getLinks: ->
+        details = @get "details"
+        indexUrl = details.indexOf('URL(S) DU COURS')
+        urls = []
+        if indexUrl isnt -1
+            indexFiles = details.indexOf('FICHIER(S) DU COURS')
+            if indexFiles isnt -1
+                details = details.substring indexUrl, indexFiles
+            else
+                details = details.substring indexUrl, details.length
+            urls = @extractLinks details
+        return urls
+
+    getFiles: ->
+        details = @get "details"
+        indexFiles = details.indexOf('FICHIER(S) DU COURS')
+        files = []
+        if indexFiles isnt -1
+            details = details.substring indexFiles, details.length
+            files = @extractLinks details
+        return files
+
 
     # Update start, with values in setObj,
     # while ensuring that end stays after start.
