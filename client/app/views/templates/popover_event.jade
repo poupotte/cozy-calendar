@@ -33,19 +33,23 @@
                                         size="10"
                                         placeholder=t("To [date]"),
                                         value=end.format(dFormat))
+
+    if files.length > 0
+        label.file
+            span.title-link= t('Fichiers du cours :')
+            a.file(role="button") #{description}
+
     label.links
         if links.length > 0
-            span.link= t('Lien(s) du cours :')
-                p
-                  for link in links
-                      label.link
-                          a.link-course(href = link.url) #{t(link.text)}
-    label.files
-        if files.length > 0
-            span.link=t('Fichier(s) du cours :')
-                for link in files
-                    label.link
-                        a.link-course(href = link.url) #{t(link.text)}
+            if links.length > 1
+                span.title-link= t('Liens concernant le cours : ')
+                    p
+                      for link in links
+                          label.link
+                             a.link-course(href = link.url) #{t(link.text)}
+            else
+                span.title-link= t('Lien concernant le cours : ')
+                    a.link-course(href = links[0].url) #{t(links[0].text)}
 
 .popover-footer
     a.advanced-link(role="button",

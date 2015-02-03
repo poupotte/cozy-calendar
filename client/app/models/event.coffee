@@ -1,4 +1,5 @@
 ScheduleItem = require './scheduleitem'
+client = require '../lib/client'
 
 module.exports = class Event extends ScheduleItem
 
@@ -6,6 +7,7 @@ module.exports = class Event extends ScheduleItem
     startDateField: 'start'
     endDateField: 'end'
     urlRoot: 'events'
+
 
     defaults: ->
         details: ''
@@ -52,8 +54,19 @@ module.exports = class Event extends ScheduleItem
         files = []
         if indexFiles isnt -1
             details = details.substring indexFiles, details.length
-            files = @extractLinks details
-        return files
+            details = details.replace 'FICHIER(S) DU COURS - ', ''
+            details = details.split('\n')
+            @path = details[0]
+            return [@path]
+        else
+            return []
+
+    getUrl: (callback) ->
+        client.get "folders/#{@path}", (err, res, body) ->
+            if err?
+                callback err
+            else
+                callback null, res.responseText
 
 
     # Update start, with values in setObj,

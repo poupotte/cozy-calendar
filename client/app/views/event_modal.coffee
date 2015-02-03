@@ -34,6 +34,7 @@ module.exports = class EventModal extends ViewCollection
         super
 
     events: ->
+        'click .file':       'homeGoTo'
         'click  #confirm-btn': 'save'
         'click  #cancel-btn': 'close'
         'click  .close': 'close'
@@ -89,6 +90,12 @@ module.exports = class EventModal extends ViewCollection
             @remove()
 
         @$('#basic-summary').focus()
+
+    homeGoTo: () ->
+        intent =
+            action: 'goto'
+            params: "files/folders/4ad3124fa4a266705bfc9745970b64fc"
+        window.parent.postMessage intent, window.location.origin
 
     hideOnEscape: (e) =>
         # escape from outside a datetimepicker

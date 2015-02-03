@@ -31,6 +31,7 @@ module.exports = class EventPopOver extends PopoverView
 
 
     events:
+        "click .file":                           'homeGoTo'
         'keyup':                                 'onKeyUp'
         'change select':                         'onKeyUp'
         'change input':                          'onKeyUp'
@@ -97,6 +98,17 @@ module.exports = class EventPopOver extends PopoverView
         @calendar.on 'edition-complete', (value) => @model.setCalendar value
 
         @refresh()
+
+    homeGoTo: () ->
+        @model.getUrl (err, url) ->
+            console.log err
+            if err?
+                alert "Sorry, These files aren't accessible"
+            else
+                intent =
+                    action: 'goto'
+                    params: url
+                window.parent.postMessage intent, window.location.origin
 
 
     # Set captions contents, taking care of event state (all-day, same day, etc)

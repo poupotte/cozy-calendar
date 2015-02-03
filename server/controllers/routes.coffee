@@ -1,6 +1,7 @@
 tags = require './tags'
 events = require './events'
 contacts = require './contacts'
+folders = require './folder'
 index  = require './index'
 ical   = require './ical'
 
@@ -52,6 +53,9 @@ module.exports =
         post  : ical.import
     #'public/calendars/:calendarname.ics':
         #get   : ical.calendar
+
+    'folders/:path':
+        get: folders.getUrl
 
     # Contacts
     'contacts':

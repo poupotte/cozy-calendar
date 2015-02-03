@@ -35,3 +35,6 @@ module.exports =
 
     webdavaccount:
         all       : americano.defaultRequests.all
+
+    folder:
+        byFullPath: (doc) -> emit (doc.path + '/' + doc.name), doc

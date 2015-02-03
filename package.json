@@ -46,6 +46,9 @@
     "Event": {
       "description": "Creates and edits your events."
     },
+    "Folder":{
+      "description": "Used to create links with folders in files application."
+    },
     "User": {
       "description": "Used to recover your timezone"
     },

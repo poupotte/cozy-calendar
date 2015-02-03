@@ -65,11 +65,13 @@ module.exports = class PopoverView extends BaseView
 
         realHeight = pos.top + @target.height() + popoverHeight
         fitBottom = realHeight < ctnOfs.top + @container.height()
+        fitTop = pos.top - popoverHeight > ctnOfs.top
 
-        if fitRight
-            return 'right'
-        else if fitLeft
-            return 'left'
+        if fitBottom and fitTop
+            if fitRight
+                return 'right'
+            else
+                return 'left'
         else if fitBottom
             return 'bottom'
         else
