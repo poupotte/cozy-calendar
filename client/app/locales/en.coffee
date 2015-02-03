@@ -129,6 +129,9 @@ module.exports =
     "All one day"                       : "All day"
     'Reminders before the event'        : 'Reminders before the event'
     "reminder"                          : "Reminder"
+    "support"                           : "Supports: "
+    "resource"                          : "Resources: "
+    "folder-not-found"                  : "These supports are not available"
 # CONFIRM MODAL
     'send mails question'               : 'Send a notification email to: '
     'modal send mails'                  : 'Send a notification'

@@ -14,6 +14,7 @@ module.exports = class Event extends ScheduleItem
         description: ''
         place: ''
         links: ['']
+        folder: ''
         tags: ['my calendar']
 
     getDiff: ->
@@ -62,10 +63,11 @@ module.exports = class Event extends ScheduleItem
             return []
 
     getUrl: (callback) ->
-        client.get "folders/#{@path}", (err, res, body) ->
+        client.get "folders/#{@path}", (err, res, body) =>
             if err?
                 callback err
             else
+                @folder = res.responseText
                 callback null, res.responseText
 
 

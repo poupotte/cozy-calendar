@@ -31,7 +31,7 @@ module.exports = class EventPopOver extends PopoverView
 
 
     events:
-        "click .file":                           'homeGoTo'
+        "click a.file":                          'homeGoTo'
         'keyup':                                 'onKeyUp'
         'change select':                         'onKeyUp'
         'change input':                          'onKeyUp'
@@ -70,6 +70,13 @@ module.exports = class EventPopOver extends PopoverView
 
 
     afterRender: ->
+        @$('span.not-found').hide()
+        if @files isnt []
+            @model.getUrl (err, url) ->
+                if err?
+                    @files = "These file doesn't exist"
+                    @$('a.file').remove()
+                    @$('span.not-found').show()
         @addButton    = @$ '.btn.add'
         @removeButton = @$ '.remove'
         @$container   = @$ '.popover-content-wrapper'
@@ -99,16 +106,11 @@ module.exports = class EventPopOver extends PopoverView
 
         @refresh()
 
-    homeGoTo: () ->
-        @model.getUrl (err, url) ->
-            console.log err
-            if err?
-                alert "Sorry, These files aren't accessible"
-            else
-                intent =
-                    action: 'goto'
-                    params: url
-                window.parent.postMessage intent, window.location.origin
+    homeGoTo: ->
+        intent =
+            action: 'goto'
+            params: @model.folder
+        window.parent.postMessage intent, window.location.origin
 
 
     # Set captions contents, taking care of event state (all-day, same day, etc)

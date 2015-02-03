@@ -36,19 +36,20 @@
 
     if files.length > 0
         label.file
-            span.title-link= t('Fichiers du cours :')
+            span.title-link= t('support')
             a.file(role="button") #{description}
+            span.not-found= t('folder-not-found')
 
     label.links
         if links.length > 0
             if links.length > 1
-                span.title-link= t('Liens concernant le cours : ')
+                span.title-link= t('resource')
                     p
                       for link in links
                           label.link
                              a.link-course(href = link.url) #{t(link.text)}
             else
-                span.title-link= t('Lien concernant le cours : ')
+                span.title-link= t('resource')
                     a.link-course(href = links[0].url) #{t(links[0].text)}
 
 .popover-footer
