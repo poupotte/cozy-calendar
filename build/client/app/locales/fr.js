@@ -124,6 +124,8 @@ module.exports = {
   "All one day": "Toute la journée du",
   'Reminders before the event': 'Rappels avant l\'évènement',
   "reminder": "Rappel",
+  "support": "Supports: ",
+  "resource": "Ressources: ",
   'send mails question': 'Envoyer un email de notification à : ',
   'modal send mails': 'Envoyer une notification',
   'yes': 'Oui',

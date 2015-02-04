@@ -1013,6 +1013,51 @@ module.exports = BaseView = (function(_super) {
 })(Backbone.View);
 });
 
+;require.register("lib/client", function(exports, require, module) {
+exports.request = function(type, url, data, callback) {
+  return $.ajax({
+    type: type,
+    url: url,
+    data: data != null ? JSON.stringify(data) : null,
+    contentType: "application/json",
+    dataType: "json",
+    success: function(data) {
+      if (callback != null) {
+        return callback(null, data);
+      }
+    },
+    error: function(data) {
+      var _ref;
+      if ((_ref = data.status) === 200 || _ref === 201 || _ref === 204 || _ref === 304) {
+        if (callback != null) {
+          return callback(null, data);
+        }
+      } else if ((data != null) && (data.msg != null) && (callback != null)) {
+        return callback(new Error(data.msg));
+      } else if (callback != null) {
+        return callback(new Error("Server error occured"));
+      }
+    }
+  });
+};
+
+exports.get = function(url, callbacks) {
+  return exports.request("GET", url, null, callbacks);
+};
+
+exports.post = function(url, data, callbacks) {
+  return exports.request("POST", url, data, callbacks);
+};
+
+exports.put = function(url, data, callbacks) {
+  return exports.request("PUT", url, data, callbacks);
+};
+
+exports.del = function(url, callbacks) {
+  return exports.request("DELETE", url, null, callbacks);
+};
+});
+
 ;require.register("lib/colorhash", function(exports, require, module) {
 var hslToRgb, hue2rgb;
 
@@ -1291,7 +1336,7 @@ module.exports = PopoverView = (function(_super) {
   };
 
   PopoverView.prototype.getDirection = function(tip) {
-    var $tmp, ctnOfs, fitBottom, fitLeft, fitRight, popoverHeight, popoverWidth, pos, realHeight, realWidth;
+    var $tmp, ctnOfs, fitBottom, fitLeft, fitRight, fitTop, popoverHeight, popoverWidth, pos, realHeight, realWidth;
     $tmp = $(tip).clone().appendTo('body');
     popoverWidth = $tmp.innerWidth();
     popoverHeight = $tmp.innerHeight();
@@ -1303,10 +1348,13 @@ module.exports = PopoverView = (function(_super) {
     fitLeft = pos.left - popoverWidth > ctnOfs.left;
     realHeight = pos.top + this.target.height() + popoverHeight;
     fitBottom = realHeight < ctnOfs.top + this.container.height();
-    if (fitRight) {
-      return 'right';
-    } else if (fitLeft) {
-      return 'left';
+    fitTop = pos.top - popoverHeight > ctnOfs.top;
+    if (fitBottom && fitTop) {
+      if (fitRight) {
+        return 'right';
+      } else {
+        return 'left';
+      }
     } else if (fitBottom) {
       return 'bottom';
     } else {
@@ -1672,6 +1720,9 @@ module.exports = {
   "All one day": "All day",
   'Reminders before the event': 'Reminders before the event',
   "reminder": "Reminder",
+  "support": "Supports: ",
+  "resource": "Resources: ",
+  "folder-not-found": "These supports are not available",
   'send mails question': 'Send a notification email to: ',
   'modal send mails': 'Send a notification',
   'yes': 'Yes',
@@ -1867,6 +1918,8 @@ module.exports = {
   "All one day": "Toute la journée du",
   'Reminders before the event': 'Rappels avant l\'évènement',
   "reminder": "Rappel",
+  "support": "Supports: ",
+  "resource": "Ressources: ",
   'send mails question': 'Envoyer un email de notification à : ',
   'modal send mails': 'Envoyer une notification',
   'yes': 'Oui',
@@ -1960,11 +2013,13 @@ module.exports = Contact = (function(_super) {
 });
 
 ;require.register("models/event", function(exports, require, module) {
-var Event, ScheduleItem,
+var Event, ScheduleItem, client,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 ScheduleItem = require('./scheduleitem');
+
+client = require('../lib/client');
 
 module.exports = Event = (function(_super) {
   __extends(Event, _super);
@@ -1986,12 +2041,93 @@ module.exports = Event = (function(_super) {
       details: '',
       description: '',
       place: '',
+      links: [''],
+      folder: '',
       tags: ['my calendar']
     };
   };
 
   Event.prototype.getDiff = function() {
     return this.getEndDateObject().diff(this.getStartDateObject(), 'days');
+  };
+
+  Event.prototype.extractLinks = function(details) {
+    var index, link, links, linksWithName, linksWithoutName, _i, _j, _k, _len, _len1, _len2;
+    links = [];
+    linksWithName = details.match(/\[[a-zA-Z0-9\-\.\ ]+\]\ (http|https|ftp|ftps)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,3}(\/\S*)?/g);
+    if (linksWithName == null) {
+      linksWithName = [];
+    }
+    for (_i = 0, _len = linksWithName.length; _i < _len; _i++) {
+      link = linksWithName[_i];
+      details = details.replace(link, '');
+    }
+    linksWithoutName = details.match(/(?!\]\ )(http|https|ftp|ftps)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,3}(\/\S*)?/g);
+    if (linksWithoutName == null) {
+      linksWithoutName = [];
+    }
+    for (_j = 0, _len1 = linksWithName.length; _j < _len1; _j++) {
+      link = linksWithName[_j];
+      index = link.indexOf(']');
+      links.push({
+        "url": link.substring(index + 2, link.length),
+        "text": link.substring(1, index)
+      });
+    }
+    for (_k = 0, _len2 = linksWithoutName.length; _k < _len2; _k++) {
+      link = linksWithoutName[_k];
+      links.push({
+        "url": link,
+        "text": link
+      });
+    }
+    return links;
+  };
+
+  Event.prototype.getLinks = function() {
+    var details, indexFiles, indexUrl, urls;
+    details = this.get("details");
+    indexUrl = details.indexOf('URL(S) DU COURS');
+    urls = [];
+    if (indexUrl !== -1) {
+      indexFiles = details.indexOf('FICHIER(S) DU COURS');
+      if (indexFiles !== -1) {
+        details = details.substring(indexUrl, indexFiles);
+      } else {
+        details = details.substring(indexUrl, details.length);
+      }
+      urls = this.extractLinks(details);
+    }
+    return urls;
+  };
+
+  Event.prototype.getFiles = function() {
+    var details, files, indexFiles;
+    details = this.get("details");
+    indexFiles = details.indexOf('FICHIER(S) DU COURS');
+    files = [];
+    if (indexFiles !== -1) {
+      details = details.substring(indexFiles, details.length);
+      details = details.replace('FICHIER(S) DU COURS - ', '');
+      details = details.split('\n');
+      this.path = details[0];
+      return [this.path];
+    } else {
+      return [];
+    }
+  };
+
+  Event.prototype.getUrl = function(callback) {
+    return client.get("folders/" + this.path, (function(_this) {
+      return function(err, res, body) {
+        if (err != null) {
+          return callback(err);
+        } else {
+          _this.folder = res.responseText;
+          return callback(null, res.responseText);
+        }
+      };
+    })(this));
   };
 
   Event.prototype.setStart = function(setObj) {
@@ -2843,6 +2979,7 @@ module.exports = EventPopOver = (function(_super) {
   EventPopOver.prototype.template = require('./templates/popover_event');
 
   EventPopOver.prototype.events = {
+    "click a.file": 'homeGoTo',
     'keyup': 'onKeyUp',
     'change select': 'onKeyUp',
     'change input': 'onKeyUp',
@@ -2876,6 +3013,16 @@ module.exports = EventPopOver = (function(_super) {
 
   EventPopOver.prototype.afterRender = function() {
     var timepickerEvents;
+    this.$('span.not-found').hide();
+    if (this.files !== []) {
+      this.model.getUrl(function(err, url) {
+        if (err != null) {
+          this.files = "These file doesn't exist";
+          this.$('a.file').remove();
+          return this.$('span.not-found').show();
+        }
+      });
+    }
     this.addButton = this.$('.btn.add');
     this.removeButton = this.$('.remove');
     this.$container = this.$('.popover-content-wrapper');
@@ -2907,6 +3054,15 @@ module.exports = EventPopOver = (function(_super) {
       };
     })(this));
     return this.refresh();
+  };
+
+  EventPopOver.prototype.homeGoTo = function() {
+    var intent;
+    intent = {
+      action: 'goto',
+      params: this.model.folder
+    };
+    return window.parent.postMessage(intent, window.location.origin);
   };
 
   EventPopOver.prototype.setCaptions = function() {
@@ -2948,6 +3104,8 @@ module.exports = EventPopOver = (function(_super) {
       allDay: this.model.isAllDay(),
       sameDay: this.model.isSameDay(),
       start: this.model.getStartDateObject(),
+      links: this.model.getLinks(),
+      files: this.model.getFiles(),
       end: this.model.getEndDateObject().add((this.model.isAllDay() ? -1 : 0), 'd')
     });
   };
@@ -5535,10 +5693,50 @@ var __templateData = function template(locals) {
 var buf = [];
 var jade_mixins = {};
 var jade_interp;
-var locals_ = (locals || {}),popoverClassName = locals_.popoverClassName,allDay = locals_.allDay,sameDay = locals_.sameDay,start = locals_.start,tFormat = locals_.tFormat,end = locals_.end,dFormat = locals_.dFormat,advancedUrl = locals_.advancedUrl,editionMode = locals_.editionMode;
+var locals_ = (locals || {}),popoverClassName = locals_.popoverClassName,allDay = locals_.allDay,sameDay = locals_.sameDay,start = locals_.start,tFormat = locals_.tFormat,end = locals_.end,dFormat = locals_.dFormat,files = locals_.files,description = locals_.description,links = locals_.links,advancedUrl = locals_.advancedUrl,editionMode = locals_.editionMode;
 popoverClassName  = (allDay ? ' is-all-day' : '')
 popoverClassName += (sameDay? ' is-same-day' : '')
-buf.push("<div" + (jade.cls(['popover-content-wrapper',popoverClassName], [null,true])) + "><label" + (jade.attr("aria-hidden", "" + (allDay) + "", true, false)) + " class=\"timed\"><span class=\"caption\">" + (jade.escape(null == (jade_interp = t("From")) ? "" : jade_interp)) + "</span><input tabindex=\"4\" type=\"time\" size=\"5\"" + (jade.attr("placeholder", t("From [hours:minutes]"), true, false)) + (jade.attr("value", start.format(tFormat), true, false)) + " class=\"input-start input-time\"/></label><label class=\"aside\"><input tabindex=\"3\" type=\"checkbox\" value=\"checked\"" + (jade.attr("checked", allDay, true, false)) + " class=\"input-allday\"/><span class=\"caption\">" + (jade.escape(null == (jade_interp = t('All day')) ? "" : jade_interp)) + "</span></label><label" + (jade.attr("aria-hidden", "" + (allDay) + "", true, false)) + " class=\"timed\"><span class=\"input-end-caption caption\">" + (jade.escape(null == (jade_interp = t("To")) ? "" : jade_interp)) + "</span><input tabindex=\"5\" type=\"time\" size=\"5\"" + (jade.attr("placeholder", t("To [hours:minutes]"), true, false)) + (jade.attr("value", end.format(tFormat), true, false)) + " class=\"input-end-time input-time\"/></label><label class=\"end-date\"><span class=\"caption\">" + (jade.escape(null == (jade_interp = allDay? t(sameDay? "All one day" : "All day, until") : ",") ? "" : jade_interp)) + "&nbsp;</span><input tabindex=\"6\" type=\"date\" size=\"10\"" + (jade.attr("placeholder", t("To [date]"), true, false)) + (jade.attr("value", end.format(dFormat), true, false)) + " class=\"input-end-date input-date\"/></label></div><div class=\"popover-footer\"><a role=\"button\" tabindex=\"8\"" + (jade.attr("href", '#'+advancedUrl, true, false)) + " data-tabindex-next=\"1\" class=\"advanced-link\">" + (jade.escape(null == (jade_interp = t('advanced')) ? "" : jade_interp)) + "</a><a role=\"button\" tabindex=\"7\" class=\"btn add\">" + (jade.escape(null == (jade_interp = editionMode ? t('Edit') : t('Create')) ? "" : jade_interp)) + "</a></div>");;return buf.join("");
+buf.push("<div" + (jade.cls(['popover-content-wrapper',popoverClassName], [null,true])) + "><label" + (jade.attr("aria-hidden", "" + (allDay) + "", true, false)) + " class=\"timed\"><span class=\"caption\">" + (jade.escape(null == (jade_interp = t("From")) ? "" : jade_interp)) + "</span><input tabindex=\"4\" type=\"time\" size=\"5\"" + (jade.attr("placeholder", t("From [hours:minutes]"), true, false)) + (jade.attr("value", start.format(tFormat), true, false)) + " class=\"input-start input-time\"/></label><label class=\"aside\"><input tabindex=\"3\" type=\"checkbox\" value=\"checked\"" + (jade.attr("checked", allDay, true, false)) + " class=\"input-allday\"/><span class=\"caption\">" + (jade.escape(null == (jade_interp = t('All day')) ? "" : jade_interp)) + "</span></label><label" + (jade.attr("aria-hidden", "" + (allDay) + "", true, false)) + " class=\"timed\"><span class=\"input-end-caption caption\">" + (jade.escape(null == (jade_interp = t("To")) ? "" : jade_interp)) + "</span><input tabindex=\"5\" type=\"time\" size=\"5\"" + (jade.attr("placeholder", t("To [hours:minutes]"), true, false)) + (jade.attr("value", end.format(tFormat), true, false)) + " class=\"input-end-time input-time\"/></label><label class=\"end-date\"><span class=\"caption\">" + (jade.escape(null == (jade_interp = allDay? t(sameDay? "All one day" : "All day, until") : ",") ? "" : jade_interp)) + "&nbsp;</span><input tabindex=\"6\" type=\"date\" size=\"10\"" + (jade.attr("placeholder", t("To [date]"), true, false)) + (jade.attr("value", end.format(dFormat), true, false)) + " class=\"input-end-date input-date\"/></label>");
+if ( files.length > 0)
+{
+buf.push("<label class=\"file\"><span class=\"title-link\">" + (jade.escape(null == (jade_interp = t('support')) ? "" : jade_interp)) + "</span><a role=\"button\" class=\"file\">" + (jade.escape((jade_interp = description) == null ? '' : jade_interp)) + "</a><span class=\"not-found\">" + (jade.escape(null == (jade_interp = t('folder-not-found')) ? "" : jade_interp)) + "</span></label>");
+}
+buf.push("<label class=\"links\">");
+if ( links.length > 0)
+{
+if ( links.length > 1)
+{
+buf.push("<span class=\"title-link\">" + (jade.escape(null == (jade_interp = t('resource')) ? "" : jade_interp)) + "<p>");
+// iterate links
+;(function(){
+  var $$obj = links;
+  if ('number' == typeof $$obj.length) {
+
+    for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
+      var link = $$obj[$index];
+
+buf.push("<label class=\"link\"><a" + (jade.attr("href", link.url, true, false)) + " class=\"link-course\">" + (jade.escape((jade_interp = t(link.text)) == null ? '' : jade_interp)) + "</a></label>");
+    }
+
+  } else {
+    var $$l = 0;
+    for (var $index in $$obj) {
+      $$l++;      var link = $$obj[$index];
+
+buf.push("<label class=\"link\"><a" + (jade.attr("href", link.url, true, false)) + " class=\"link-course\">" + (jade.escape((jade_interp = t(link.text)) == null ? '' : jade_interp)) + "</a></label>");
+    }
+
+  }
+}).call(this);
+
+buf.push("</p></span>");
+}
+else
+{
+buf.push("<span class=\"title-link\">" + (jade.escape(null == (jade_interp = t('resource')) ? "" : jade_interp)) + "<a" + (jade.attr("href", links[0].url, true, false)) + " class=\"link-course\">" + (jade.escape((jade_interp = t(links[0].text)) == null ? '' : jade_interp)) + "</a></span>");
+}
+}
+buf.push("</label></div><div class=\"popover-footer\"><a role=\"button\" tabindex=\"8\"" + (jade.attr("href", '#'+advancedUrl, true, false)) + " data-tabindex-next=\"1\" class=\"advanced-link\">" + (jade.escape(null == (jade_interp = t('advanced')) ? "" : jade_interp)) + "</a><a role=\"button\" tabindex=\"7\" class=\"btn add\">" + (jade.escape(null == (jade_interp = editionMode ? t('Edit') : t('Create')) ? "" : jade_interp)) + "</a></div>");;return buf.join("");
 };
 if (typeof define === 'function' && define.amd) {
   define([], function() {

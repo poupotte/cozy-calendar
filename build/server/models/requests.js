@@ -57,5 +57,10 @@ module.exports = {
   },
   webdavaccount: {
     all: americano.defaultRequests.all
+  },
+  folder: {
+    byFullPath: function(doc) {
+      return emit(doc.path + '/' + doc.name, doc);
+    }
   }
 };
