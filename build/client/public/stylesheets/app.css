@@ -9276,11 +9276,10 @@ a.btn:visited {
   font-size: 2rem;
   color: #c8d5df;
 }
-.popover label input.dontaskagain[type=checkbox],
-.popover .label input.dontaskagain[type=checkbox] {
-  height: 3em;
-  float: left;
-  margin-right: 2em;
+.popover label input.dontaskagain,
+.popover .label input.dontaskagain {
+  margin-right: 0.25em;
+  vertical-align: baseline;
 }
 .popover .label-row {
   width: 100%;
@@ -9594,7 +9593,6 @@ a.btn:visited {
   -webkit-order: 3;
   order: 3;
 }
-.input-details-trigger,
 .input-place {
   overflow: hidden;
   -o-text-overflow: ellipsis;
@@ -9956,6 +9954,16 @@ ul.alerts .type input[type=checkbox] {
   width: 2em;
   height: 2em;
   margin: 2em 0;
+}
+.button-full-block .overflow-wrapper {
+  width: 16em;
+  overflow: hidden;
+  -o-text-overflow: ellipsis;
+  text-overflow: ellipsis;
+  line-height: 3em;
+  display: inline-block;
+  height: 3em;
+  display: inline-block;
 }
 [data-state~="default"],
 [data-state~="enabled"] {
